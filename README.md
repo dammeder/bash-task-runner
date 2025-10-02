@@ -105,5 +105,3 @@ This assignment will help students practice:
 - SSH and SCP usage  
 - Sequential execution of tasks  
 - Error handling in scripts  
-
-# prevent pushing to main branch
