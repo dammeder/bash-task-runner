@@ -1,63 +1,63 @@
 #!/bin/bash
 
-#If command given run the command on VM, if its a local scirpt file, transfer the script to VM then excecute 
-# ./action.sh --runs-on REMOTE_USER@REMOTE_IP --step "echo Hello World"
-#scp $FILE $REMOTE_USER@$REMOTE_IP:/tmp 
-
-#START
-#steps=()
-# while $# > 0
-#   case $1
-#       --runs_on) 
-#           REMOTE_HOST="$2"
-#           shift
-#       --step) 
-#           steps+=$2
-#   esac
-# for step in STEPS;
-#   if the command is scripts
-#   scp #scp $FILE $REMOTE_USER@$REMOTE_IP:/~
-#   ssh root@ipadress script
-#   else
-#
-#   ssh root@ipadress command
-# END
-
-
+set -euo pipefail ## if anything in the script fails => exit 
 
 REMOTE_USER="root"
 REMOTE_IP="68.183.145.114"
-
 STEPS=()
-while [[ $# -gt 0 ]]; do 
+
+
+while [[ $# -gt 0 ]]; do ## define arguments
     case "$1" in 
         --runs-on)
-            REMOTE_HOST=$2
-            echo $REMOTE_HOST
+            VM=$2
             shift 2
         ;;
         --step)
             STEPS+=("$2")
             shift 2
         ;;
+        *)
+            echo "Usage: action --runs-on USER@HOST --step \"command_or_script\" [--step ...]"
+            echo "  --runs-on  : Remote host to run commands on (user@ip)"
+            echo "  --step     : Command or local script to execute"
+            echo "¯\_(ツ)_/¯"
+            exit 1
+        ;;
 
     esac
 done
-echo "${STEPS[@]}"
 
 for step in "${STEPS[@]}"; do 
-    
-    if [ -f $step ]; then
-        echo "this is a file"
-        scp $step $REMOTE_USER@$REMOTE_IP:/tmp
-        ssh $REMOTE_USER@$REMOTE_IP "chmod +x /tmp/$(basename $step)"
-        echo "sucesfully teleported file"
-        #ssh -t $REMOTE_USER@$REMOTE_IP "bash /tmp/$(basename $step)"
-        echo "ran the scipt"
 
+    if [[ -f "$step" ]]; then ## if its a file, find it 
+        FILE=$step
+        echo "Located your file ╾━╤デ╦︻ (•_- )"
+    elif [[ -f "./$step" ]]; then
+        FILE=$step
+        echo "Located your file ╾━╤デ╦︻ (•_- )"
+    elif [[ -f "../$step" ]]; then
+        FILE=$step
+        echo "Located your file ╾━╤デ╦︻ (•_- )"
     else 
-        echo " its not a file"
-        eval $step
-        
+        FILE=""
     fi
+
+    if [[ -n "$FILE" ]]; then ## copy the file to VM and run the script 
+        echo "Connecting to VM"
+        scp $FILE $VM:/tmp
+        ssh $VM "chmod +x /tmp/$(basename $FILE)"
+        echo "RUNNING SCRIPT..."
+        ssh -t $VM "bash /tmp/$(basename $FILE)"
+        ssh $VM "rm -r /tmp/$(basename $FILE)"
+        echo ""
+        echo "TELEPORTATION COMPLETE ᕙ( •̀ ᗜ •́ )ᕗ"
+    else                    ## excecute the command in VM 
+        echo "Connecting to VM"
+        echo "Running the command: $step"
+        ssh $VM "$step"
+        echo ""
+        echo "COMMAND EXCECUTION COMPLETE ᕙ( •̀ ᗜ •́ )ᕗ"
+    fi
+    echo ""
 done
