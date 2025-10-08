@@ -2,8 +2,6 @@
 
 set -euo pipefail ## if anything in the script fails > exit  
 
-# REMOTE_USER="root"
-# REMOTE_IP="68.183.145.114"
 STEPS=()
 
 
