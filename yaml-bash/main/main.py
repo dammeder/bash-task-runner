@@ -1,40 +1,52 @@
 import yaml 
-import getpass
-import random
-
-with open("game_config.yml", "r") as f: 
-    config = yaml.safe_load(f)
-
-range_min = config['range']['min']
-range_max = config['range']['max']
-guesses_allowed = config['guesses']
-mode = config['mode']
-
-solved = False
-
-if mode == "single":
-    correct_number = random.randint(range_min, range_max)
-elif mode == "multi": 
-    correct_number = int(getpass.getpass("Playe 2 please enter number to guess:"))
-else: 
-    print("invalid")
-    exit()
-
-for i in range(guesses_allowed):
-
-    guess = int(input("enter your guess: "))
-
-    if guess == correct_number:
-
-        print("correct")
-        solved = True
-        break
-    elif guess < correct_number:
-        print("Too low")
-    else:
-        print("too high")
-
-if not solved:
-    print("You lost")
+import os
+import sys
+import subprocess
 
 
+def main():
+    input_file = "main.yml"
+    output_file = "workflow.sh"
+    try:
+        with open(input_file, "r") as f:
+            workflow = yaml.safe_load(f)
+    except FileNotFoundError:
+        print(f"ERROR: {input_file} doesnt exist dummy")    
+        sys.exit(1)
+    except yaml.YAMLError as e:
+        print(f"ERROR: YAML file is wrong: \n{e}")
+        sys.exit(1)
+
+    if "steps" not in workflow or not isinstance(workflow['steps'], list):
+        print("ERROR: No steps or its not a list")
+        sys.exit(1)
+
+    with open(output_file, "w") as bash:
+        bash.write("#!/bin/bash\n")
+        bash.write(f"#Workflow: {workflow.get('name', 'Unnamed Workflow')}\n\n")
+
+        for i, step in enumerate(workflow['steps'], start=1):
+            name = step.get('name')
+            run = step.get('run')
+            if not name or not run: 
+                print(f"Skiiping invalid step {i}")
+                continue
+            
+            bash.write(f"#Step {i}: {name} \n\n")
+
+            if isinstance(run, str):
+                bash.write(run.strip() + "\n\n")
+            elif isinstance(run, list):
+                for cmd in run:
+                    bash.write(cmd.strip() + "\n")
+            else:
+                print(f"Run format is wrong in step{i}")
+
+    os.chmod(output_file, 0o755)
+    print(f"Generated {output_file} sucesfully")
+
+    print(f"Running the {output_file} scipt......\n")
+    subprocess.run("./" + output_file)
+
+
+main()
