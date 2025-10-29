@@ -11,7 +11,7 @@ def main():
         with open(input_file, "r") as f:
             workflow = yaml.safe_load(f)
     except FileNotFoundError:
-        print(f"ERROR: {input_file} doesnt exist f")    
+        print(f"ERROR: {input_file} doesnt exist")    
         sys.exit(1)
     except yaml.YAMLError as e:
         print(f"ERROR: YAML file is wrong: \n{e}")
@@ -29,7 +29,7 @@ def main():
             name = step.get('name')
             run = step.get('run')
             if not name or not run: 
-                print(f"SKIPPING INVALID STEP {i}\n")
+                print(f"SKIPPING EMPTY STEP {i}\n")
                 continue
             
             bash.write(f"#Step {i}: {name} \n\n")
